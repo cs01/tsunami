@@ -11,17 +11,20 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <title>Tsunami Check</title>
 <meta property="og:title" content="Tsunami Check">
-<meta property="og:description" content="Is a tsunami coming? Was that an earthquake? One tap tells you, in plain words. Plus what El Niño is doing.">
+<meta property="og:description" content="Is a tsunami coming? One tap tells you, in plain words. Plus what El Niño is doing.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=block">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-  <h1>🌊 Tsunami Check</h1>
+  <nav class="tabs">
+    <a href="./" class="keep-place on">Tsunami</a>
+    <a href="earthquakes" class="keep-place">Earthquakes</a>
+  </nav>
   <div id="where">
-    <button id="gpsBtn">📍 Where I am</button>
+    <button id="gpsBtn">Where I am</button>
     <form id="searchForm" autocomplete="off">
       <input id="search" type="search" placeholder="or type a town…" aria-label="search for a place">
       <div id="suggest" hidden></div>
@@ -30,44 +33,46 @@
 </header>
 
 <main>
-  <section id="hero" class="card calm">
-    <div class="big">👋</div>
-    <h2>Hi! Where are you?</h2>
-    <p>Tap <b>📍 Where I am</b> or type a town, and I'll tell you if a tsunami is coming.</p>
+  <section id="hero" class="card lv-none">
+    <div class="dot">?</div>
+    <h2>Where are you?</h2>
+    <p>Tap <b>Where I am</b> or type a town, and I'll tell you if a tsunami is coming.</p>
   </section>
+  <div class="legend"><span class="chip green">Safe</span><span class="chip yellow">Pay attention</span><span class="chip orange">Be careful</span><span class="chip red">Danger</span></div>
 
-  <section id="height" class="card" hidden></section>
+  <section id="height" class="card"><div class="meter skel"></div><div class="txt"><div class="skel line" style="width:60%;height:26px"></div><div class="skel line"></div><div class="skel line" style="width:80%"></div></div></section>
 
-  <section class="card" id="shakesCard" hidden>
-    <h3>🫨 Shakes near you</h3>
-    <div id="shakes"></div>
+  <a id="quakeLink" class="card linkcard keep-place" href="earthquakes">
+    <h3>Earthquakes</h3>
+    <div id="quakeTeaser" class="sub" style="min-height:52px">Was that a shake? See every earthquake near you, in plain words.</div>
+    <span class="go">Open the earthquake page →</span>
+  </a>
+
+  <section class="card">
+    <h3>Ocean earthquakes that can make tsunamis</h3>
+    <p class="sub">A tsunami starts when a big earthquake shoves the sea floor. These are the big ocean quakes of the last 30 days.</p>
+    <div id="map" class="map"></div>
+    <div id="quakes"><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div></div>
   </section>
 
   <section class="card">
-    <h3>💥 Big earthquakes around the world</h3>
-    <p class="sub">Big shakes under the ocean are what make tsunamis. These are the biggest of the last 30 days.</p>
-    <div id="map"></div>
-    <div id="quakes"><div class="loading">Looking…</div></div>
-  </section>
-
-  <section class="card">
-    <h3>📣 What the tsunami centers say</h3>
+    <h3>What the tsunami centers say</h3>
     <p class="sub">Scientists in Alaska and Hawaii watch every ocean, all day and all night.</p>
-    <div id="centers"><div class="loading">Asking…</div></div>
+    <div id="centers"><div class="skel row"></div><div class="skel row"></div></div>
   </section>
 
   <section class="card" id="ensoCard">
-    <h3>🌡️ El Niño</h3>
-    <div id="enso"><div class="loading">Checking the ocean…</div></div>
+    <h3>El Niño</h3>
+    <div id="enso"><div class="skel line" style="width:50%;height:30px"></div><div class="skel line"></div><div class="skel line" style="height:22px;margin-top:16px"></div><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div></div>
   </section>
 
   <section class="card">
-    <h3>🏃 If the ground shakes near the ocean</h3>
+    <h3>If the ground shakes near the ocean</h3>
     <ol class="steps">
-      <li><span>🫣</span><div><b>Drop, cover, hold on</b> until the shaking stops.</div></li>
-      <li><span>⛰️</span><div><b>Walk uphill or away from the water right away.</b> Don't wait for a siren. The shake <i>is</i> the warning.</div></li>
-      <li><span>🌊</span><div>If the ocean <b>suddenly pulls way out</b> and you see the sea floor, a wave is coming. <b>Go up high, fast.</b></div></li>
-      <li><span>⏳</span><div><b>Stay up high for hours.</b> The first wave is often not the biggest.</div></li>
+      <li><b>Drop, cover, hold on</b> until the shaking stops.</li>
+      <li><b>Walk uphill or away from the water right away.</b> Don't wait for a siren. The shake <i>is</i> the warning.</li>
+      <li>If the ocean <b>suddenly pulls way out</b> and you see the sea floor, a wave is coming. <b>Go up high, fast.</b></li>
+      <li><b>Stay up high for hours.</b> The first wave is often not the biggest.</li>
     </ol>
   </section>
 
@@ -77,12 +82,15 @@
     <a href="https://earthquake.usgs.gov" target="_blank" rel="noopener">USGS</a> ·
     <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/" target="_blank" rel="noopener">NOAA CPC</a> ·
     <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+    <a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a> ·
+    <a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a> ·
     map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a><br>
     If you ever hear an official warning, listen to it first. This page is a helper, not the siren.
   </footer>
 </main>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="common.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

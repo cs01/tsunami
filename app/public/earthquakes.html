@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f8fe0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quakes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<title>Earthquake Check</title>
+<meta property="og:title" content="Earthquake Check">
+<meta property="og:description" content="Was that an earthquake? How strong was it where you are? Plain words, no Richter math.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=block">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <nav class="tabs">
+    <a href="./" class="keep-place">Tsunami</a>
+    <a href="earthquakes" class="keep-place on">Earthquakes</a>
+  </nav>
+  <div id="where">
+    <button id="gpsBtn">Where I am</button>
+    <form id="searchForm" autocomplete="off">
+      <input id="search" type="search" placeholder="or type a town…" aria-label="search for a place">
+      <div id="suggest" hidden></div>
+    </form>
+  </div>
+</header>
+
+<main>
+  <section id="hero" class="card lv-none">
+    <div class="dot">?</div>
+    <h2>Where are you?</h2>
+    <p>Tap <b>Where I am</b> or type a town, and I'll tell you how hard the ground shook there.</p>
+  </section>
+  <div class="legend"><span class="chip green">Safe</span><span class="chip yellow">Pay attention</span><span class="chip orange">Be careful</span><span class="chip red">Danger</span></div>
+
+  <section class="card" id="nearCard">
+    <h3>Shakes you'd feel here</h3>
+    <p class="sub">Last 30 days. Each one is colored by how hard it shook <b>where you are</b>, not how big it was.</p>
+    <div id="nearMap" class="map"></div>
+    <div id="near"><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div></div>
+  </section>
+
+  <section class="card">
+    <h3>What the shaking feels like</h3>
+    <p class="sub">The number (magnitude) is how big the quake was. What you feel depends on how close you are. A medium quake right under you can shake harder than a giant one far away.</p>
+    <div id="scale"></div>
+  </section>
+
+  <section class="card">
+    <h3>Big earthquakes around the world</h3>
+    <p class="sub">Last 30 days. Colored by how much damage USGS expects.</p>
+    <div id="worldMap" class="map"></div>
+    <div id="world"><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div></div>
+  </section>
+
+  <section class="card">
+    <h3>When the ground shakes</h3>
+    <ol class="steps">
+      <li><b>Drop</b> to your hands and knees, <b>cover</b> your head under a table, <b>hold on</b> until it stops.</li>
+      <li>Stay inside. Don't run out while it's shaking. Things fall off buildings.</li>
+      <li>Afterward, expect <b>aftershocks</b>. Smell gas? Get out and tell a grown-up.</li>
+      <li>Near the ocean and it shook hard for a long time? <b>Walk uphill now.</b> <a href="./" class="keep-place">Check for tsunamis</a>.</li>
+    </ol>
+    <div id="extras"></div>
+  </section>
+
+  <footer>
+    Data: <a href="https://www.tsunami.gov" target="_blank" rel="noopener">NOAA tsunami.gov</a> ·
+    <a href="https://www.weather.gov" target="_blank" rel="noopener">NWS alerts</a> ·
+    <a href="https://earthquake.usgs.gov" target="_blank" rel="noopener">USGS</a> ·
+    <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/" target="_blank" rel="noopener">NOAA CPC</a> ·
+    <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+    <a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a> ·
+    <a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a> ·
+    map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a><br>
+    If you ever hear an official warning, listen to it first. This page is a helper, not the siren.
+  </footer>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="common.js"></script>
+<script src="quakes.js"></script>
+</body>
+</html>
