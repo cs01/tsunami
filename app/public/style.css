@@ -159,3 +159,13 @@ footer { text-align: center; font-size: 13px; color: var(--muted); margin: 18px 
   #hero h2 { font-size: 28px; }
   #hero { min-height: 280px; }
 }
+
+/* Shaking zones under a map; height reserved so the caption arriving moves nothing. */
+.zone-cap { min-height: 64px; font-size: 15px; color: var(--muted); margin: -2px 0 8px; }
+.zone-cap b { color: var(--ink); }
+.zone-key { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.zone-key .chip { font-size: 13px; }
+.row.pickable { cursor: pointer; }
+.row.pickable:hover { background: #e9f1fb; }
+.row.picked { background: #dcebfb; box-shadow: inset 0 0 0 2px #9cc4ee; }
+.home-pin div { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 4px solid var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.4); }

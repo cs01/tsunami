@@ -1,6 +1,7 @@
 // The earthquake page: how hard the ground shook where you are (by felt
 // intensity, not magnitude), what each level feels like, and the big quakes
-// around the world colored by USGS's damage estimate. Helpers live in common.js.
+// around the world colored by USGS's damage estimate. Tapping a quake draws
+// its shaking zones on the map. Helpers live in common.js.
 "use strict";
 
 const NEAR_KM = 500;
@@ -10,6 +11,17 @@ let near = null;
 let world = [];
 let nearMap = null;
 let worldMap = null;
+let nearPick = null; // the quake whose zones the near map shows
+let worldPick = null;
+
+function fromFeature(f) {
+  return {
+    id: f.id, mag: f.properties.mag ?? 0, place: f.properties.place || "Somewhere", time: f.properties.time,
+    felt: f.properties.felt || 0, url: f.properties.url, detail: f.properties.detail,
+    alert: f.properties.alert, mmi: f.properties.mmi, depth: f.geometry.coordinates[2],
+    lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1],
+  };
+}
 
 async function loadNear(p) {
   const since = new Date(Date.now() - 30 * 86400e3).toISOString().slice(0, 19);
@@ -17,32 +29,27 @@ async function loadNear(p) {
     const j = await getJson(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${p.lat.toFixed(3)}&longitude=${p.lon.toFixed(3)}&maxradiuskm=${NEAR_KM}&starttime=${since}&minmagnitude=2.5&orderby=time&limit=300`);
     if (p !== place) return;
     near = j.features.map((f) => {
-      const q = {
-        mag: f.properties.mag ?? 0, place: f.properties.place || "Nearby", time: f.properties.time,
-        felt: f.properties.felt || 0, url: f.properties.url, depth: f.geometry.coordinates[2],
-        lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1],
-      };
+      const q = fromFeature(f);
       q.here = intensity(q.mag, km(p, q), q.depth);
       return q;
     // Only what you'd notice here. USGS "felt" counts come from people near the
     // quake, not near you, so they can't stand in for it.
     }).filter((q) => q.here >= FEEL_MIN);
   } catch {
-    if (p === place && !near) {
-      $("near").innerHTML = '<div class="loading">Could not reach USGS. Trying again soon.</div>';
-    }
+    if (p === place && !near) $("near").innerHTML = '<div class="loading">Could not reach USGS. Trying again soon.</div>';
     return;
   }
   renderNear();
 }
 
 const HERO_MARK = { green: "✓", yellow: "!", orange: "!", red: "!!" };
+const hardest = (list) => list.reduce((a, q) => (!a || q.here > a.here ? q : a), null);
+const details = (q) => ` · <a href="${esc(q.url)}" target="_blank" rel="noopener">details</a>`;
 
 function renderNear() {
   if (!place || !near) return;
   // The answer is about today; the month is context.
   const today = near.filter((q) => Date.now() - q.time < 86400e3);
-  const hardest = (list) => list.reduce((a, q) => (!a || q.here > a.here ? q : a), null);
   const t = hardest(today), m = hardest(near);
   let level, title, msg;
   if (t) {
@@ -60,16 +67,22 @@ function renderNear() {
     <div class="place">${esc(place.name)}</div>
     <div class="updated">Checked ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · USGS · rechecks every minute. New quakes show up a few minutes after they happen.</div>`;
 
-  $("near").innerHTML = near.length
-    ? near.slice(0, 12).map((q) => {
+  const shown = near.slice(0, 12);
+  // Keep the picked quake across refreshes; default to the hardest-felt one.
+  if (!nearPick || !near.some((q) => q.id === nearPick.id)) nearPick = m;
+  $("near").innerHTML = shown.length
+    ? shown.map((q, i) => {
         const s = shake(q.here);
         const felt = q.felt ? ` · ${q.felt.toLocaleString()} people reported feeling it` : "";
-        return row(s.level, chip(s.level, s.word), `${ago(q.time)} · ${fmtDist(km(place, q))} away, ${esc(q.place)}${felt} · M${q.mag.toFixed(1)}`, q.url);
+        return row(s.level, chip(s.level, s.word), `${ago(q.time)} · ${fmtDist(km(place, q))} away, ${esc(q.place)}${felt} · M${q.mag.toFixed(1)}${details(q)}`, null, i);
       }).join("")
     : row("green", "Nothing you'd feel in the last 30 days", "Small quakes may have happened, but too small or far away to notice here.");
+  markPicked("near", shown, nearPick);
   if (window.L) {
     nearMap = quakeMap("nearMap", nearMap);
-    plotQuakes(nearMap, near.map((q) => ({ ...q, level: shake(q.here).level, label: `<b>${esc(shake(q.here).word)}</b><br>${esc(q.place)}<br>${ago(q.time)} · M${q.mag.toFixed(1)}` })), place, 9);
+    plotQuakes(nearMap, near.map((q) => ({ ...q, level: shake(q.here).level, picked: q === nearPick, label: `<b>${esc(shake(q.here).word)}</b><br>${esc(q.place)}<br>${ago(q.time)} · M${q.mag.toFixed(1)}` })), place, 9, (i) => pickNear(near[i]), placeKey());
+    showZones(nearMap, nearPick, $("nearZone"), place);
+    if (!nearPick) $("nearZone").innerHTML = "Tap a quake to see how far its shaking reached.";
   }
 
   // ShakeAlert covers the US West Coast; MyShake is its free phone app.
@@ -77,8 +90,19 @@ function renderNear() {
     (box(place, 32, 49, -125, -114) ? `<div class="fact"><b>Get a warning before the shaking:</b> the free <a href="https://myshake.berkeley.edu" target="_blank" rel="noopener">MyShake app</a> can buzz your phone seconds before a big quake reaches you.</div>` : "");
 }
 
+const placeKey = () => (place ? `${place.lat},${place.lon}` : "none");
+
+function markPicked(listId, shown, picked) {
+  [...$(listId).querySelectorAll("[data-pick]")].forEach((r) => r.classList.toggle("picked", shown[+r.dataset.pick] === picked));
+}
+
+function pickNear(q) {
+  nearPick = q;
+  renderNear();
+  $("nearMap").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 function renderScale() {
-  // One row per distinct level in the scale, mildest first.
   $("scale").innerHTML = SHAKE.slice(1).map((s) => row(s.level, chip(s.level, s.word), s.what)).join("");
 }
 
@@ -86,11 +110,7 @@ async function loadWorld() {
   const since = new Date(Date.now() - 30 * 86400e3).toISOString().slice(0, 10);
   try {
     const j = await getJson(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minmagnitude=6&starttime=${since}&orderby=time&limit=60`);
-    world = j.features.map((f) => ({
-      mag: f.properties.mag, place: f.properties.place || "Somewhere", time: f.properties.time,
-      url: f.properties.url, alert: f.properties.alert, mmi: f.properties.mmi, depth: f.geometry.coordinates[2],
-      lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1],
-    }));
+    world = j.features.map(fromFeature);
   } catch {
     $("world").innerHTML = '<div class="loading">Could not reach USGS. Trying again soon.</div>';
     return;
@@ -99,24 +119,36 @@ async function loadWorld() {
 }
 
 function renderWorld() {
-  $("world").innerHTML = world.length
-    ? world.slice(0, 15).map((q) => {
+  const shown = world.slice(0, 15);
+  if (!worldPick || !world.some((q) => q.id === worldPick.id)) worldPick = world[0] || null;
+  else worldPick = world.find((q) => q.id === worldPick.id);
+  $("world").innerHTML = shown.length
+    ? shown.map((q, i) => {
         const level = q.alert || "none";
         // ShakeMap's peak covers sea and land alike; a weak peak means open ocean.
         const mmi = q.mmi ?? intensity(q.mag, 0, q.depth);
         const felt = mmi < 3 ? "far out at sea, nobody felt it" : "near the center: " + shake(mmi).word.toLowerCase();
         const far = place ? ` · ${fmtDist(km(place, q))} from you` : "";
-        return row(level, esc(q.place), `${chip(level, PAGER[q.alert] || "No damage report yet")} ${felt} · ${ago(q.time)}${far} · M${q.mag.toFixed(1)}`, q.url);
+        return row(level, esc(q.place), `${chip(level, PAGER[q.alert] || "No damage report yet")} ${felt} · ${ago(q.time)}${far} · M${q.mag.toFixed(1)}${details(q)}`, null, i);
       }).join("")
     : row("green", "No big earthquakes in the last 30 days", "");
+  markPicked("world", shown, worldPick);
   if (window.L) {
     worldMap = quakeMap("worldMap", worldMap);
-    plotQuakes(worldMap, world.map((q) => ({ ...q, level: q.alert || "none", label: `<b>${esc(q.place)}</b><br>M${q.mag.toFixed(1)} · ${ago(q.time)}` })), place, 3);
+    plotQuakes(worldMap, world.map((q) => ({ ...q, level: q.alert || "none", picked: q === worldPick, label: `<b>${esc(q.place)}</b><br>M${q.mag.toFixed(1)} · ${ago(q.time)}` })), place, 3, (i) => pickWorld(world[i]), placeKey());
+    showZones(worldMap, worldPick, $("worldZone"), null);
   }
+}
+
+function pickWorld(q) {
+  worldPick = q;
+  renderWorld();
+  $("worldMap").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function showPlace(p) {
   near = null;
+  nearPick = null;
   $("hero").className = "card lv-none";
   $("hero").innerHTML = `<div class="dot">…</div><h2>Checking…</h2><p class="place">${esc(p.name)}</p>`;
   loadNear(p);
@@ -125,6 +157,8 @@ function showPlace(p) {
 
 (async () => {
   renderScale();
+  onPick($("near"), (i) => pickNear(near[i]));
+  onPick($("world"), (i) => pickWorld(world[i]));
   await loadWorld();
   initPicker(showPlace);
   if (!place) $("near").innerHTML = row("none", "Pick a place", "Tap Where I am or type a town to see the shakes you'd feel there.");

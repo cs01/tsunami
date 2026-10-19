@@ -174,7 +174,68 @@ function renderQuakes() {
   }
   if (!window.L) return;
   map = quakeMap("map", map);
-  plotQuakes(map, list.map((q) => ({ ...q, level: q.alert || "none", label: `<b>${esc(q.place)}</b><br>M${q.mag.toFixed(1)} · ${ago(q.time)}` })), place, 4);
+  plotQuakes(map, list.map((q) => ({ ...q, level: q.alert || "none", label: `<b>${esc(q.place)}</b><br>M${q.mag.toFixed(1)} · ${ago(q.time)}` })), place, 4, null, place ? `${place.lat},${place.lon}` : "none");
+  renderTsuZones();
+}
+
+// ── tsunami danger zones ──
+
+// A tsunami's danger zone is the stretch of coast under an alert, not a circle.
+// NWS publishes these for US coasts: polygons on the alert, or zone IDs whose
+// shapes live at their own URLs (cached; coastal zones don't move).
+const TSU_KEY = `<div class="zone-key"><span class="chip red">Warning: go to high ground</span><span class="chip orange">Advisory: stay off the beach</span><span class="chip yellow">Watch: be ready</span></div>`;
+const zoneShapes = new Map();
+let tsuAlerts = []; // [{level, event, area, geom: [GeoJSON geometry]}], null if NWS failed
+
+async function zoneShape(url) {
+  if (!zoneShapes.has(url)) zoneShapes.set(url, getJson(url, 8000).then((z) => z.geometry).catch(() => null));
+  return zoneShapes.get(url);
+}
+
+async function loadTsuZones() {
+  try {
+    const j = await getJson("https://api.weather.gov/alerts/active?event=Tsunami%20Warning,Tsunami%20Advisory,Tsunami%20Watch");
+    tsuAlerts = await Promise.all(j.features.map(async (f) => {
+      const a = f.properties;
+      const geom = f.geometry ? [f.geometry] : (await Promise.all((a.affectedZones || []).slice(0, 60).map(zoneShape))).filter(Boolean);
+      return { level: alertLevel(a.event), event: a.event, area: a.areaDesc || "", geom };
+    }));
+  } catch {
+    tsuAlerts = null;
+  }
+  renderTsuZones();
+}
+
+function renderTsuZones() {
+  if (!map) return;
+  map.zones.clearLayers();
+  if (tsuAlerts === null) {
+    $("tsuZone").innerHTML = "Could not reach the National Weather Service for danger zones. Trying again soon." + TSU_KEY;
+    return;
+  }
+  if (!tsuAlerts.length) {
+    $("tsuZone").innerHTML = `${chip("green", "No tsunami danger zones right now")} When there's an alert, the coasts in danger get colored here.${TSU_KEY}`;
+    map.zoneFor = null;
+    return;
+  }
+  const order = ["yellow", "orange", "red"];
+  const b = L.latLngBounds([]);
+  // Mildest first, so a warning draws over a watch on the same coast.
+  for (const a of tsuAlerts.slice().sort((x, y) => order.indexOf(x.level) - order.indexOf(y.level))) {
+    const c = LEVEL_COLOR[a.level];
+    for (const g of a.geom) {
+      const layer = L.geoJSON(g, { style: { color: c, weight: 3, fillColor: c, fillOpacity: 0.35 } }).bindTooltip(esc(a.event)).addTo(map.zones);
+      b.extend(layer.getBounds());
+    }
+  }
+  $("tsuZone").innerHTML = tsuAlerts.map((a) => `${chip(a.level, a.event)} ${esc(a.area.length > 140 ? a.area.slice(0, 140) + "…" : a.area)}`).join("<br>") + TSU_KEY;
+  // Fit once per set of alerts, not every minute.
+  const key = tsuAlerts.map((a) => a.event + a.area).join("|");
+  if (map.zoneFor !== key && b.isValid()) {
+    if (place) b.extend([place.lat, place.lon]);
+    map.fitBounds(b, { padding: [16, 16], maxZoom: 7 });
+  }
+  map.zoneFor = key;
 }
 
 // ── earthquake teaser ──
@@ -382,13 +443,13 @@ function showPlace(p) {
 }
 
 async function refresh() {
-  await Promise.all([loadQuakes(), loadCenters()]);
+  await Promise.all([loadQuakes(), loadCenters(), loadTsuZones()]);
   check();
 }
 
 (async () => {
   loadEnso();
-  await Promise.all([loadQuakes(), loadCenters()]);
+  await Promise.all([loadQuakes(), loadCenters(), loadTsuZones()]);
   initPicker(showPlace);
   if (!place) $("height").innerHTML = '<div class="txt"><p>Pick a place and I\'ll tell you if it\'s high enough and far enough from the ocean to be safe from tsunamis.</p></div>';
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);

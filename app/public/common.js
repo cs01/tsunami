@@ -49,11 +49,24 @@ const LEVEL_ORDER = ["none", "green", "yellow", "orange", "red"];
 const chip = (level, text) => `<span class="chip ${level}">${esc(text)}</span>`;
 const worse = (a, b) => (LEVEL_ORDER.indexOf(b) > LEVEL_ORDER.indexOf(a) ? b : a);
 
-// A colored list row: the bar on its left is its level.
-function row(level, title, sub, href) {
+// A colored list row: the bar on its left is its level. `pick` makes it a
+// button that selects quake number `pick` (its zones go on the map).
+function row(level, title, sub, href, pick) {
   const tag = href ? "a" : "div";
   const link = href ? ` href="${esc(href)}" target="_blank" rel="noopener"` : "";
-  return `<${tag} class="row lv-${level}"${link}><div><b>${title}</b><span>${sub}</span></div></${tag}>`;
+  const sel = pick != null ? ` data-pick="${pick}" role="button" tabindex="0"` : "";
+  return `<${tag} class="row lv-${level}${pick != null ? " pickable" : ""}"${link}${sel}><div><b>${title}</b><span>${sub}</span></div></${tag}>`;
+}
+
+// Clicks on rows made with `pick` call handler(index); links inside still work.
+function onPick(listEl, handler) {
+  const go = (e) => {
+    if (e.target.closest("a")) return;
+    const r = e.target.closest("[data-pick]");
+    if (r) handler(+r.dataset.pick);
+  };
+  listEl.addEventListener("click", go);
+  listEl.addEventListener("keydown", (e) => { if (e.key === "Enter") go(e); });
 }
 
 // ── shaking ──
@@ -205,27 +218,86 @@ function quakeMap(el, old) {
   if (old) return old;
   const m = L.map(el, { worldCopyJump: true, attributionControl: false, scrollWheelZoom: false }).setView([15, -170], 1);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 12 }).addTo(m);
+  // Zones under the markers, so a dot inside its own red zone stays tappable.
+  m.zones = L.layerGroup().addTo(m);
   m.layer = L.layerGroup().addTo(m);
   return m;
 }
 
-// points: [{lat, lon, mag, level, label}]
-function plotQuakes(m, points, home, maxZoom) {
+// points: [{lat, lon, mag, level, label}]. The view is fitted only when `fitKey`
+// changes (a new place, or the first data): the minute refresh must not yank
+// the map away from someone panning it.
+function plotQuakes(m, points, home, maxZoom, pick, fitKey) {
   m.layer.clearLayers();
   const ref = home ? home.lon : points[0]?.lon ?? 0;
   const fit = [];
-  for (const q of points) {
+  points.forEach((q, i) => {
     const ll = [q.lat, unwrap(q.lon, ref)];
     fit.push(ll);
-    L.circleMarker(ll, {
-      radius: Math.max(4, 3 + (q.mag - 3) * 3), color: LEVEL_COLOR[q.level], weight: 2, fillOpacity: 0.5,
-    }).bindPopup(q.label).addTo(m.layer);
-  }
+    const mk = L.circleMarker(ll, {
+      radius: Math.max(5, 3 + (q.mag - 3) * 3), color: "#18304d", weight: q.picked ? 3 : 1.5,
+      fillColor: LEVEL_COLOR[q.level], fillOpacity: 0.9,
+    }).bindTooltip(q.label).addTo(m.layer);
+    if (pick) mk.on("click", () => pick(i));
+  });
   if (home) {
     fit.push([home.lat, home.lon]);
-    L.circleMarker([home.lat, home.lon], { radius: 7, color: "#18304d", weight: 3, fillColor: "#fff", fillOpacity: 1 })
-      .bindPopup("You: " + esc(home.name)).addTo(m.layer);
+    L.marker([home.lat, home.lon], {
+      icon: L.divIcon({ className: "home-pin", html: "<div></div>", iconSize: [18, 18] }),
+      zIndexOffset: 1000,
+    }).bindTooltip("You: " + esc(home.name)).addTo(m.layer);
   }
+  if (m.fitKey === fitKey) return;
+  m.fitKey = fitKey;
   if (fit.length > 1) m.fitBounds(fit, { padding: [20, 20], maxZoom });
   else if (fit.length) m.setView(fit[0], Math.min(maxZoom, 6));
+}
+
+// ── shaking zones ──
+
+// Where intensity falls to `mmi`, in epicentral km: the intensity formula
+// solved for distance. null when even the spot above the quake stays below it.
+function zoneKm(mag, depthKm, mmi) {
+  const r = 10 ** ((3.67 + 1.17 * mag - mmi) / 3.19);
+  const d = Math.max(0, depthKm || 0);
+  if (r <= Math.max(5, d)) return null;
+  return Math.sqrt(r * r - d * d);
+}
+
+// Thresholds where the color changes, outermost first.
+const ZONE_STEPS = [3, 4, 5, 7];
+
+// Draws one quake's shaking zones on `m` as filled rings, red at the center
+// fading to green, and says what they are in `caption`. Rings from the same
+// intensity formula as the lists, so the map and the words always agree.
+// USGS's ShakeMap is more exact (it knows soft ground shakes harder) but its
+// contours are too ragged to read at a glance; it's linked instead.
+function showZones(m, q, caption, home) {
+  // The minute refresh re-renders with the same pick; redrawing would refit
+  // the map under someone's finger.
+  if (m.zoneFor === (q ? q.id : null)) return;
+  m.zoneFor = q ? q.id : null;
+  m.zones.clearLayers();
+  if (!q) {
+    caption.innerHTML = "";
+    return;
+  }
+  const center = [q.lat, unwrap(q.lon, home ? home.lon : q.lon)];
+  let outer = null;
+  for (const mmi of ZONE_STEPS) {
+    const k = zoneKm(q.mag, q.depth, mmi);
+    if (k == null) continue;
+    const c = LEVEL_COLOR[shake(mmi).level];
+    const ring = L.circle(center, { radius: k * 1000, color: c, weight: 2, fillColor: c, fillOpacity: 0.18, interactive: false }).addTo(m.zones);
+    outer = outer || ring;
+  }
+  if (outer) {
+    const b = outer.getBounds();
+    if (home) b.extend([home.lat, home.lon]);
+    m.fitBounds(b, { padding: [16, 16], maxZoom: 9 });
+  }
+  caption.innerHTML = `<b>${esc(q.place)}</b>, ${ago(q.time)}, M${q.mag.toFixed(1)}. ` +
+    (outer ? "Colors show about how hard it shook in each area." : "Too small or deep to shake anywhere hard enough to notice.") +
+    ` <a href="${esc(q.url)}/shakemap" target="_blank" rel="noopener">USGS shaking map</a>` +
+    `<div class="zone-key"><span class="chip red">Damage</span><span class="chip orange">Things fall</span><span class="chip yellow">Dishes rattle</span><span class="chip green">A little rumble</span></div>`;
 }
