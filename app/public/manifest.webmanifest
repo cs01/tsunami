@@ -1,0 +1,10 @@
+{
+  "name": "Tsunami Check",
+  "short_name": "Tsunami",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#5cc0ff",
+  "theme_color": "#1f8fe0",
+  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
