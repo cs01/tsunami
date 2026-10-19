@@ -650,6 +650,18 @@ pub fn iconHandler(ctx: &mut Context): Response {
     return Response.Status(200, "image/svg+xml", @embedFile("public/icons/icon.svg"))
 }
 
+// Share thumbnails (tools/og.sh). Link-preview crawlers fetch these once and
+// cache them, so a day is plenty.
+pub fn ogTsunamiHandler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "public, max-age=86400")
+    return Response.Status(200, "image/png", @embedFile("public/og-tsunami.png"))
+}
+
+pub fn ogQuakesHandler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "public, max-age=86400")
+    return Response.Status(200, "image/png", @embedFile("public/og-quakes.png"))
+}
+
 pub fn healthHandler(ctx: &mut Context): Response {
     return ctx.json(Json.obj().str("status", "ok").str("app", "tsunami").int("cached", cache.len()).int("coastVertices", coastLat.len).build())
 }
@@ -680,6 +692,8 @@ pub fn main(): i32 {
     r.get("/style.css", styleHandler)
     r.get("/manifest.webmanifest", manifestHandler)
     r.get("/icons/icon.svg", iconHandler)
+    r.get("/og-tsunami.png", ogTsunamiHandler)
+    r.get("/og-quakes.png", ogQuakesHandler)
     r.get("/api/centers", centersHandler)
     r.get("/api/enso", ensoHandler)
     r.get("/api/coast", coastHandler)

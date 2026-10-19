@@ -12,6 +12,17 @@
 <title>Tsunami Check</title>
 <meta property="og:title" content="Tsunami Check">
 <meta property="og:description" content="Is a tsunami coming? One tap tells you, in plain words. Plus what El Niño is doing.">
+<meta name="description" content="Is a tsunami coming? One tap tells you, in plain words. Plus what El Niño is doing.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://chadsmith.dev/tsunami/">
+<meta property="og:site_name" content="chadsmith.dev">
+<meta property="og:image" content="https://chadsmith.dev/tsunami/og-tsunami.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tsunami Check: green, yellow, orange and red safety levels">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tsunami Check">
+<meta name="twitter:image" content="https://chadsmith.dev/tsunami/og-tsunami.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=block">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -22,6 +33,7 @@
   <nav class="tabs">
     <a href="./" class="keep-place on">Tsunami</a>
     <a href="earthquakes" class="keep-place">Earthquakes</a>
+    <button id="shareBtn" class="share" aria-label="share">Share</button>
   </nav>
   <div id="where">
     <button id="gpsBtn">Where I am</button>
@@ -89,6 +101,7 @@
     If you ever hear an official warning, listen to it first. This page is a helper, not the siren.
   </footer>
 </main>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="common.js"></script>

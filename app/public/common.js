@@ -126,8 +126,49 @@ function setPlace(p) {
   onPlace(p);
 }
 
+// ── share ──
+
+// The link carries the place (setPlace keeps it in the URL), so whoever opens
+// it lands on the same town's answer. The text is that answer as it reads now.
+function initShare() {
+  $("shareBtn").onclick = async () => {
+    const title = document.title;
+    const answer = $("hero").querySelector("h2")?.innerText || "";
+    const text = place && !/where are you|checking/i.test(answer) ? `${answer}: ${place.name}` : title;
+    const url = location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch {} // the reader closed the share sheet
+      return;
+    }
+    try {
+      // writeText waits silently while the window lacks focus; don't let the
+      // button look dead.
+      await Promise.race([
+        navigator.clipboard.writeText(`${text}\n${url}`),
+        new Promise((_, no) => setTimeout(no, 1500)),
+      ]);
+      toast("Link copied");
+    } catch {
+      // Long enough to select and copy by hand.
+      toast("Copy this link: " + url, 10000);
+    }
+  };
+}
+
+let toastTimer = 0;
+function toast(msg, ms = 2500) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), ms);
+}
+
 function initPicker(handler) {
   onPlace = handler;
+  initShare();
   $("gpsBtn").onclick = () => {
     if (!navigator.geolocation) return noGps();
     $("gpsBtn").textContent = "Finding you…";

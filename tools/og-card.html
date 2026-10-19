@@ -1,0 +1,61 @@
+<!doctype html>
+<!-- Share thumbnails (1200x630). Rendered by tools/og.sh with headless Chrome:
+     og-card.html#tsunami and og-card.html#quakes. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=block">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: "Baloo 2", sans-serif; color: #18304d;
+    background: linear-gradient(#5cc0ff, #a9dcff 55%, #d8f0ff);
+    display: flex; align-items: center; gap: 56px; padding: 0 80px; box-sizing: border-box;
+  }
+  .art { flex: 0 0 380px; height: 380px; position: relative; }
+  .txt { flex: 1; }
+  h1 { margin: 0; font-size: 104px; line-height: .95; font-weight: 800; color: #fff; text-shadow: 0 4px 14px rgba(0,0,0,.22); }
+  p { margin: 18px 0 26px; font-size: 44px; line-height: 1.12; font-weight: 800; }
+  .chips { display: flex; gap: 10px; flex-wrap: nowrap; }
+  .chip { border-radius: 999px; padding: 2px 14px; font-size: 23px; white-space: nowrap; font-weight: 800; color: #fff; }
+  .green { background: #2fbf71; } .yellow { background: #e5b800; color: #3a2f00; }
+  .orange { background: #ff8a1f; } .red { background: #e5322d; }
+  .url { position: absolute; right: 40px; bottom: 26px; font-size: 28px; font-weight: 800; color: #18304d; opacity: .7; }
+  /* tsunami art: the page's answer card, green check */
+  .card { position: absolute; inset: 0; background: #fff; border-radius: 48px; border: 14px solid #2fbf71; box-shadow: 0 16px 50px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; }
+  .dot { width: 190px; height: 190px; border-radius: 50%; background: #2fbf71; color: #fff; font-size: 130px; font-weight: 800; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  /* quake art: shaking rings, red center fading to green */
+  .ring { position: absolute; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 6px solid; box-sizing: border-box; }
+  .ring:first-child { box-shadow: 0 16px 50px rgba(0,0,0,.2); }
+</style>
+</head>
+<body>
+<div class="art" id="art"></div>
+<div class="txt">
+  <h1 id="title"></h1>
+  <p id="line"></p>
+  <div class="chips"><span class="chip green">Safe</span><span class="chip yellow">Pay attention</span><span class="chip orange">Be careful</span><span class="chip red">Danger</span></div>
+</div>
+<div class="url" id="url"></div>
+<script>
+  const quakes = location.hash === "#quakes";
+  document.getElementById("title").textContent = quakes ? "Earthquake Check" : "Tsunami Check";
+  document.getElementById("line").textContent = quakes
+    ? "How hard did it shake where you are? Plain words, no Richter math."
+    : "Is a tsunami coming? One tap tells you, in plain words.";
+  document.getElementById("url").textContent = quakes ? "chadsmith.dev/earthquakes" : "chadsmith.dev/tsunami";
+  const art = document.getElementById("art");
+  if (quakes) {
+    // Solid tints: see-through fills muddy against the sky.
+    [[380, "#2fbf71", "#c9f0d9"], [290, "#e5b800", "#fbeaa0"], [200, "#ff8a1f", "#ffcf9f"], [110, "#e5322d", "#f59a97"]].forEach(([d, c, fill]) => {
+      const r = document.createElement("div");
+      r.className = "ring";
+      Object.assign(r.style, { width: d + "px", height: d + "px", borderColor: c, background: fill });
+      art.appendChild(r);
+    });
+  } else {
+    art.innerHTML = '<div class="card"><div class="dot">✓</div></div>';
+  }
+</script>
+</body>
+</html>
