@@ -32,10 +32,17 @@ async function loadNear(p) {
     // quake, not near you, so they can't stand in for it.
     }).filter((q) => q.here >= FEEL_MIN);
   } catch {
-    if (p === place && !near) $("near").innerHTML = '<div class="loading">Could not reach USGS. Trying again soon.</div>';
+    if (p === place && !near) nearNote('<div class="loading">Could not reach USGS. Trying again soon.</div>');
     return;
   }
   renderNear();
+}
+
+// Status lines (nothing felt, pick a place, USGS down) sit under the heading,
+// above the map; the felt quakes themselves list below it.
+function nearNote(html) {
+  $("nearNote").innerHTML = html;
+  if (html) $("near").innerHTML = "";
 }
 
 const HERO_MARK = { green: "✓", yellow: "!", orange: "!", red: "!!" };
@@ -66,13 +73,12 @@ function renderNear() {
   const shown = near.slice(0, 12);
   // Keep the picked quake across refreshes; default to the hardest-felt one.
   if (!nearPick || !near.some((q) => q.id === nearPick.id)) nearPick = m;
-  $("near").innerHTML = shown.length
-    ? shown.map((q, i) => {
+  nearNote(shown.length ? "" : row("green", "Nothing you'd feel in the last 30 days", "Small quakes may have happened, but too small or far away to notice here."));
+  $("near").innerHTML = shown.map((q, i) => {
         const s = shake(q.here);
         const felt = q.felt ? ` · ${q.felt.toLocaleString()} people reported feeling it` : "";
         return row(s.level, chip(s.level, s.word), `${ago(q.time)} · ${fmtDist(km(place, q))} away, ${esc(q.place)}${felt} · M${q.mag.toFixed(1)}${details(q)}`, null, i);
-      }).join("")
-    : row("green", "Nothing you'd feel in the last 30 days", "Small quakes may have happened, but too small or far away to notice here.");
+      }).join("");
   markPicked("near", shown, nearPick);
   if (window.L) {
     nearMap = quakeMap("nearMap", nearMap);
@@ -114,7 +120,7 @@ function showPlace(p) {
   renderScale();
   onPick($("near"), (i) => pickNear(near[i]));
   initPicker(showPlace);
-  if (!place) $("near").innerHTML = row("none", "Pick a place", "Tap Where I am or type a town to see the shakes you'd feel there.");
+  if (!place) nearNote(row("none", "Pick a place", "Tap Where I am or type a town to see the shakes you'd feel there."));
   const refresh = () => { if (place) loadNear(place); };
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
