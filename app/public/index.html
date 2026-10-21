@@ -28,6 +28,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=block">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
+<!-- appnav.js loads deferred behind leaflet; Chrome may offer install before it listens -->
+<script>addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__installPrompt = e; });</script>
 </head>
 <body>
 <header>
