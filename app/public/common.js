@@ -19,6 +19,10 @@ function fmtDist(k) {
   return mi === 1 ? "1 mile" : mi.toLocaleString() + " miles";
 }
 const fmtHeight = (m) => imperial ? Math.round(m * 3.28084).toLocaleString() + " ft" : Math.round(m).toLocaleString() + " m";
+// The headline names the town: "No tsunami coming in Kailua-Kona". GPS fixes
+// are named "Where you are" until reverse geocoding answers.
+const placeShort = (p) => (p.name === "Where you are" ? "" : p.name.split(",")[0]);
+const inPlace = (p) => (placeShort(p) ? " in " + placeShort(p) : " where you are");
 const box = (p, s, n, w, e) => p.lat >= s && p.lat <= n && p.lon >= w && p.lon <= e;
 
 function ago(ms) {
@@ -135,7 +139,7 @@ function initShare() {
   window.appShare = async () => {
     const title = document.title;
     const answer = $("hero").querySelector("h2")?.innerText || "";
-    const text = place && !/where are you|checking/i.test(answer) ? `${answer}: ${place.name}` : title;
+    const text = place && !/where are you|checking/i.test(answer) ? (answer.includes(placeShort(place)) ? answer : `${answer}: ${place.name}`) : title;
     const url = location.href;
     if (navigator.share) {
       try {

@@ -58,16 +58,15 @@ function renderNear() {
   if (t) {
     const s = shake(t.here);
     level = s.level;
-    title = s.word;
+    title = s.word + inPlace(place);
     msg = `${ago(t.time)}, ${fmtDist(km(place, t))} away. ${s.what}`;
   } else {
     level = "green";
-    title = "No shaking here today";
+    title = "No shaking" + inPlace(place) + " today";
     msg = m ? `The last one you'd have felt: ${shake(m.here).word.toLowerCase()}, ${ago(m.time)}.` : "Nothing you'd have felt in the last 30 days either.";
   }
   $("hero").className = "card lv-" + level;
-  $("hero").innerHTML = `<div class="dot">${HERO_MARK[level]}</div><h2>${title}</h2><p>${msg}</p>
-    <div class="place">${esc(place.name)}</div>
+  $("hero").innerHTML = `<div class="dot">${HERO_MARK[level]}</div><h2>${esc(title)}</h2><p>${msg}</p>
     <div class="updated">Checked ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · USGS · rechecks every minute. New quakes show up a few minutes after they happen.</div>`;
 
   const shown = near.slice(0, 12);
@@ -80,8 +79,11 @@ function renderNear() {
         return row(s.level, chip(s.level, s.word), `${ago(q.time)} · ${fmtDist(km(place, q))} away, ${esc(q.place)}${felt} · M${q.mag.toFixed(1)}${details(q)}`, null, i);
       }).join("");
   markPicked("near", shown, nearPick);
-  if (window.L) {
+  // Nothing felt: no map, no "tap one" hints, just the line under the heading.
+  $("nearCard").classList.toggle("empty", !near.length);
+  if (window.L && near.length) {
     nearMap = quakeMap("nearMap", nearMap);
+    nearMap.invalidateSize(); // it may have been hidden while empty
     plotQuakes(nearMap, near.map((q) => ({ ...q, level: shake(q.here).level, picked: q === nearPick, label: `<b>${esc(shake(q.here).word)}</b><br>${esc(q.place)}<br>${ago(q.time)} · M${q.mag.toFixed(1)}` })), place, 9, (i) => pickNear(near[i]), placeKey());
     showZones(nearMap, nearPick, $("nearZone"), place);
     if (!nearPick) $("nearZone").innerHTML = "Tap a quake to see how far its shaking reached.";
@@ -112,7 +114,7 @@ function showPlace(p) {
   near = null;
   nearPick = null;
   $("hero").className = "card lv-none";
-  $("hero").innerHTML = `<div class="dot">…</div><h2>Checking…</h2><p class="place">${esc(p.name)}</p>`;
+  $("hero").innerHTML = `<div class="dot">…</div><h2>Checking${esc(inPlace(p))}…</h2>`;
   loadNear(p);
 }
 
@@ -120,6 +122,7 @@ function showPlace(p) {
   renderScale();
   onPick($("near"), (i) => pickNear(near[i]));
   initPicker(showPlace);
+  if (!place) $("nearCard").classList.add("empty");
   if (!place) nearNote(row("none", "Pick a place", "Tap Where I am or type a town to see the shakes you'd feel there."));
   const refresh = () => { if (place) loadNear(place); };
   setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);

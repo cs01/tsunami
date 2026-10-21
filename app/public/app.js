@@ -85,8 +85,10 @@ function renderHero(level, extra, haveNws) {
   const [mark, title, msg] = HERO[level];
   $("hero").className = "card lv-" + level;
   const src = haveNws ? "NWS alerts + tsunami.gov" : "tsunami.gov + USGS";
-  $("hero").innerHTML = `<div class="dot">${mark}</div><h2>${title}</h2><p>${msg}</p>
-    <div class="place">${esc(place.name)}</div>${extra}
+  // "GO TO HIGH GROUND NOW" stays short; the place goes on its own line there.
+  const head = level === "red" ? title : title + inPlace(place);
+  $("hero").innerHTML = `<div class="dot">${mark}</div><h2>${esc(head)}</h2><p>${msg}</p>
+    ${level === "red" ? `<div class="place">${esc(place.name)}</div>` : ""}${extra}
     <div class="updated">Checked ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${src} · rechecks every minute</div>`;
 }
 
@@ -320,7 +322,7 @@ function renderCenters() {
 
 function showPlace(p) {
   $("hero").className = "card lv-none";
-  $("hero").innerHTML = `<div class="dot">…</div><h2>Checking…</h2><p class="place">${esc(p.name)}</p>`;
+  $("hero").innerHTML = `<div class="dot">…</div><h2>Checking${esc(inPlace(p))}…</h2>`;
   loadGround(p).then(check);
   loadTeaser(p);
   renderQuakes();

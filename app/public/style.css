@@ -26,6 +26,7 @@ a { color: var(--sea); }
 header { padding: calc(env(safe-area-inset-top) + 10px) 16px 6px; max-width: 720px; margin: 0 auto; }
 /* #appnav itself comes from chadsmith.dev/appnav.js; on this sky-blue header the title is white. */
 #appnav { margin-bottom: 10px; }
+#nearCard.empty .sub, #nearCard.empty #nearMap, #nearCard.empty #nearZone { display: none; }
 #appnav .an-title { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.25); font-size: 22px; }
 #where { display: flex; gap: 8px; }
 .ico { width: 1.05em; height: 1.05em; vertical-align: -0.15em; margin-right: 6px; }
