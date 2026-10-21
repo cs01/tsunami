@@ -494,6 +494,33 @@ pub fn manifestHandler(ctx: &mut Context): Response {
     return Response.Status(200, "application/manifest+json; charset=utf-8", @embedFile("public/manifest.webmanifest"))
 }
 
+// Earthquakes installs as its own app, so it has its own manifest and icon.
+pub fn quakesManifestHandler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "no-store")
+    return Response.Status(200, "application/manifest+json; charset=utf-8", @embedFile("public/quakes.webmanifest"))
+}
+
+// PNG app icons: Android and iOS home screens want raster sizes, not the SVG.
+pub fn iconTsunami192Handler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "public, max-age=86400")
+    return Response.Status(200, "image/png", @embedFile("public/icons/tsunami-192.png"))
+}
+
+pub fn iconTsunami512Handler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "public, max-age=86400")
+    return Response.Status(200, "image/png", @embedFile("public/icons/tsunami-512.png"))
+}
+
+pub fn iconQuakes192Handler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "public, max-age=86400")
+    return Response.Status(200, "image/png", @embedFile("public/icons/quakes-192.png"))
+}
+
+pub fn iconQuakes512Handler(ctx: &mut Context): Response {
+    ctx.setHeader("Cache-Control", "public, max-age=86400")
+    return Response.Status(200, "image/png", @embedFile("public/icons/quakes-512.png"))
+}
+
 pub fn iconHandler(ctx: &mut Context): Response {
     ctx.setHeader("Cache-Control", "public, max-age=86400")
     return Response.Status(200, "image/svg+xml", @embedFile("public/icons/icon.svg"))
@@ -528,6 +555,11 @@ fn addRoutes(r: &mut Router, pre: string): void {
     r.get(pre + "/style.css", styleHandler)
     r.get(pre + "/manifest.webmanifest", manifestHandler)
     r.get(pre + "/icons/icon.svg", iconHandler)
+    r.get(pre + "/quakes.webmanifest", quakesManifestHandler)
+    r.get(pre + "/icons/tsunami-192.png", iconTsunami192Handler)
+    r.get(pre + "/icons/tsunami-512.png", iconTsunami512Handler)
+    r.get(pre + "/icons/quakes-192.png", iconQuakes192Handler)
+    r.get(pre + "/icons/quakes-512.png", iconQuakes512Handler)
     r.get(pre + "/og-tsunami.png", ogTsunamiHandler)
     r.get(pre + "/og-quakes.png", ogQuakesHandler)
     r.get(pre + "/api/centers", centersHandler)

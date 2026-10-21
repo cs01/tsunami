@@ -1,10 +1,14 @@
 {
+  "id": "/tsunami/",
   "name": "Tsunami Check",
   "short_name": "Tsunami",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/tsunami/",
+  "scope": "/tsunami/",
   "display": "standalone",
   "background_color": "#5cc0ff",
-  "theme_color": "#1f8fe0",
-  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "theme_color": "#5cc0ff",
+  "icons": [
+    { "src": "/tsunami/icons/tsunami-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/tsunami/icons/tsunami-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
