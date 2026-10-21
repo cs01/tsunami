@@ -121,8 +121,22 @@ function placeQuery(p) {
   return "?" + u;
 }
 
+// Places picked before, newest first. Both pages share this origin, so a town
+// picked on one shows up in the other's list.
+const RECENT_MAX = 6;
+function recentPlaces() {
+  try { return JSON.parse(localStorage.getItem("recentPlaces") || "[]"); } catch { return []; }
+}
+function rememberPlace(p) {
+  // Unnamed GPS fixes aren't worth offering back.
+  if (!p.name || p.name === "Where you are" || p.name === "This spot") return;
+  const rest = recentPlaces().filter((r) => r.name !== p.name);
+  try { localStorage.setItem("recentPlaces", JSON.stringify([{ lat: p.lat, lon: p.lon, name: p.name, cc: p.cc || "" }, ...rest].slice(0, RECENT_MAX))); } catch {}
+}
+
 function setPlace(p) {
   place = p;
+  rememberPlace(p);
   try { localStorage.setItem("place", JSON.stringify(p)); } catch {}
   history.replaceState(null, "", location.pathname + placeQuery(p));
   // The other page opens on the same place.
@@ -197,6 +211,16 @@ function initPicker(handler) {
   let sel = -1;
   let timer = 0;
   const hide = () => { $("suggest").hidden = true; suggestions = []; };
+  const show = (list, label) => {
+    suggestions = list;
+    sel = -1;
+    if (!list.length) return hide();
+    $("suggest").innerHTML = (label ? `<div class="label">${label}</div>` : "") + list.map((s, i) => `<div data-i="${i}">${esc(s.name)}</div>`).join("");
+    $("suggest").hidden = false;
+  };
+  // An empty box offers the places picked before.
+  const showRecent = () => show(recentPlaces().filter((r) => !place || r.name !== place.name), "Recent");
+  $("search").addEventListener("focus", () => { if ($("search").value.trim().length < 2) showRecent(); });
   const pick = (i) => {
     const s = suggestions[i];
     if (!s) return;
@@ -208,19 +232,15 @@ function initPicker(handler) {
   $("search").addEventListener("input", () => {
     clearTimeout(timer);
     const q = $("search").value.trim();
-    if (q.length < 2) return hide();
+    if (q.length < 2) return showRecent();
     timer = setTimeout(async () => {
       try {
         const j = await getJson(`api/places?home=${home}&q=${encodeURIComponent(q)}`, 6000);
         if ($("search").value.trim() !== q) return;
-        suggestions = j.map((r) => ({
+        show(j.map((r) => ({
           lat: r.lat, lon: r.lon, cc: r.cc,
           name: r.cc === "US" ? `${r.name}, ${r.region}` : [r.name, r.region && r.region !== r.name ? r.region : null, r.country].filter(Boolean).join(", "),
-        }));
-        sel = -1;
-        if (!suggestions.length) return hide();
-        $("suggest").innerHTML = suggestions.map((s, i) => `<div data-i="${i}">${esc(s.name)}</div>`).join("");
-        $("suggest").hidden = false;
+        })));
       } catch {}
     }, 40);
   });
@@ -233,7 +253,7 @@ function initPicker(handler) {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       sel = (sel + (e.key === "ArrowDown" ? 1 : -1) + suggestions.length) % suggestions.length;
-      [...$("suggest").children].forEach((c, i) => c.classList.toggle("on", i === sel));
+      [...$("suggest").querySelectorAll("[data-i]")].forEach((c, i) => c.classList.toggle("on", i === sel));
     } else if (e.key === "Escape") hide();
   });
   $("search").addEventListener("blur", () => setTimeout(hide, 150));
