@@ -34,10 +34,10 @@
   <nav class="tabs">
     <a href="./" class="keep-place">Tsunami</a>
     <a href="/earthquakes" class="keep-place on">Earthquakes</a>
-    <button id="shareBtn" class="share" aria-label="share">Share</button>
+    <button id="shareBtn" class="share" aria-label="share"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/></svg>Share</button>
   </nav>
   <div id="where">
-    <button id="gpsBtn">Where I am</button>
+    <button id="gpsBtn"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Where I am</span></button>
     <form id="searchForm" autocomplete="off">
       <input id="search" type="search" placeholder="or type a town…" aria-label="search for a place">
       <div id="suggest" hidden></div>
@@ -68,14 +68,6 @@
   </section>
 
   <section class="card">
-    <h3>Big earthquakes around the world</h3>
-    <p class="sub">Last 30 days. Colored by how much damage USGS expects. Tap one to see how far its shaking reached.</p>
-    <div id="worldMap" class="map"></div>
-    <div id="worldZone" class="zone-cap"></div>
-    <div id="world"><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div></div>
-  </section>
-
-  <section class="card">
     <h3>When the ground shakes</h3>
     <ol class="steps">
       <li><b>Drop</b> to your hands and knees, <b>cover</b> your head under a table, <b>hold on</b> until it stops.</li>
@@ -91,7 +83,6 @@
     Data: <a href="https://www.tsunami.gov" target="_blank" rel="noopener">NOAA tsunami.gov</a> ·
     <a href="https://www.weather.gov" target="_blank" rel="noopener">NWS alerts</a> ·
     <a href="https://earthquake.usgs.gov" target="_blank" rel="noopener">USGS</a> ·
-    <a href="https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/" target="_blank" rel="noopener">NOAA CPC</a> ·
     <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
     <a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a> ·
     <a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a> ·

@@ -32,6 +32,7 @@ header { padding: calc(env(safe-area-inset-top) + 10px) 16px 6px; max-width: 720
 .tabs .share { flex: 0 0 auto; min-width: 0; height: auto; padding: 6px 16px; font-size: 17px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
 .tabs a.on { background: #fff; color: var(--ink); text-shadow: none; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
 #where { display: flex; gap: 8px; }
+.ico { width: 1.05em; height: 1.05em; vertical-align: -0.15em; margin-right: 6px; }
 #searchForm { flex: 1; position: relative; min-width: 0; }
 button, input {
   font: 800 18px var(--font); color: var(--ink); border: 0; border-radius: 999px;
@@ -132,22 +133,8 @@ main { max-width: 720px; margin: 0 auto; padding: 4px 16px calc(env(safe-area-in
 @media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
 .skel.row { height: 62px; border-left-color: #e3e9f1; }
 .skel.line { height: 18px; margin: 6px 0; }
-#enso { min-height: 760px; }
-
-/* El Nino */
-.enso-top { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-.enso-top .chip { font-size: 22px; padding: 2px 14px; }
-.enso-top p { margin: 4px 0 0; }
-.gauge { margin: 14px 0 4px; position: relative; height: 22px; border-radius: 999px;
-  background: linear-gradient(90deg, #1f5fd1, #7cc0ff 30%, #eaf2ea 45%, #eaf2ea 55%, #ffb36b 70%, #e02f2f); }
-.gauge .needle { position: absolute; top: -8px; width: 6px; height: 38px; margin-left: -3px; background: var(--ink); border-radius: 3px; }
-.gauge-labels { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
-#oniChart { width: 100%; height: 150px; display: block; margin-top: 12px; }
-#oniChart text { font: 600 11px var(--font); fill: var(--muted); }
-.impacts { padding-left: 22px; margin: 6px 0 0; }
-.impacts li { padding: 3px 0; }
+/* Extra notes under a section */
 .fact { background: #eef7ff; border-radius: 16px; padding: 10px 14px; margin-top: 12px; font-size: 16px; }
-h4 { margin: 16px 0 2px; font-size: 19px; }
 
 .steps { padding-left: 24px; margin: 8px 0 0; }
 .steps li { padding: 5px 0; font-size: 18px; }

@@ -171,9 +171,9 @@ function initPicker(handler) {
   initShare();
   $("gpsBtn").onclick = () => {
     if (!navigator.geolocation) return noGps();
-    $("gpsBtn").textContent = "Finding you…";
+    gpsLabel("Finding you…");
     navigator.geolocation.getCurrentPosition(async (pos) => {
-      $("gpsBtn").textContent = "Where I am";
+      gpsLabel("Where I am");
       const p = { lat: pos.coords.latitude, lon: pos.coords.longitude, name: "Where you are", cc: "" };
       try {
         const r = await getJson(`https://nominatim.openstreetmap.org/reverse?lat=${p.lat}&lon=${p.lon}&format=json&zoom=10`, 6000);
@@ -242,8 +242,11 @@ function initPicker(handler) {
   if (p) setPlace(p);
 }
 
+// The label sits in a span so the location icon survives relabeling.
+const gpsLabel = (t) => { $("gpsBtn").querySelector("span").textContent = t; };
+
 function noGps() {
-  $("gpsBtn").textContent = "Where I am";
+  gpsLabel("Where I am");
   $("search").placeholder = "No GPS. Type a town…";
   $("search").focus();
 }

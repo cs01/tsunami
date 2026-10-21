@@ -1,10 +1,9 @@
 // tsunami: is a tsunami coming for me, did the ground shake, in words a five
 // year old can read.
-// The server proxies the two NOAA tsunami warning centers' Atom feeds and the
-// Climate Prediction Center's El Nino data (none of them send CORS headers),
-// parses them into small JSON, and caches every upstream behind one TtlCache.
+// The server proxies the two NOAA tsunami warning centers' Atom feeds (they
+// send no CORS headers), parses them into small JSON, and caches every upstream behind one TtlCache.
 // Everything CORS-open (USGS quakes, NWS point alerts, Open-Meteo elevation,
-// geocoding and sea temperature) the page fetches itself. The page is compiled
+// geocoding) the page fetches itself. The page is compiled
 // in with embedFile.
 from "std/http" import {
     Context, Response, Router, serveRouter
@@ -43,8 +42,6 @@ from "std/math" import {
 // The centers reissue a bulletin minutes apart during an event, so a minute
 // is as stale as a warning is allowed to get.
 pub let FEED_FRESH_MS: i64 = 60000
-// CPC updates ENSO weekly (Mondays) and monthly (second Thursday).
-pub let ENSO_FRESH_MS: i64 = 3 * 3600 * 1000
 // Past fresh, an answer is served only while its upstream is failing.
 pub let STALE_MS: i64 = 2 * 24 * 3600 * 1000
 
@@ -219,154 +216,6 @@ pub fn centersHandler(ctx: &mut Context): Response {
         return ctx.json("{\"error\":\"tsunami.gov unavailable\"}")
     }
     return ctx.json(Json.obj().arr("centers", arr).build())
-}
-
-// "ENSO Alert System Status: El Nino Advisory / La Nina Watch" and the synopsis
-// sentence, out of CPC's monthly discussion page.
-pub fn parseDiscussion(html: &string): string {
-    let text = plain(html)
-    var status = ""
-    if let Some(a) = text.indexOf("ENSO Alert System Status:") {
-        let rest = text.slice(a + 25, text.len).trim()
-        // The status is the run of words before "Synopsis:".
-        if let Some(b) = rest.indexOf("Synopsis:") {
-            status = rest.slice(0, b).trim().clone()
-        }
-    }
-    var synopsis = ""
-    if let Some(a) = text.indexOf("Synopsis:") {
-        let rest = text.slice(a + 9, text.len).trim()
-        if let Some(b) = rest.indexOf(". ") {
-            synopsis = rest.slice(0, b + 1).clone()
-        } else {
-            synopsis = rest.slice(0, if rest.len < 400 { rest.len } else { 400 }).clone()
-        }
-    }
-    return Json.obj().str("status", status).str("synopsis", synopsis).build()
-}
-
-// oni.ascii.txt rows are "  JAS 2026  29.12   2.16": season, year, total, anomaly.
-// Only the last `keep` rows are wanted.
-pub fn parseOni(raw: &string, keep: i64): JsonArr {
-    var rows: Vec<string> = []
-    for line in raw.lines() {
-        let f = line.split(" ").filter((w: &string): bool => w.len > 0)
-        if f.len != 4 || f[0] == "SEAS" {
-            continue
-        }
-        rows.push(Json.arr().str(f[0]).int(parseFloat(f[1]).map((v: f64): i64 => v as i64) ?? 0).float(num(f[3])).build())
-    }
-    var arr = Json.arr()
-    var i = if rows.len > keep { rows.len - keep } else { 0 }
-    while i < rows.len {
-        arr = arr.raw(rows[i])
-        i += 1
-    }
-    return arr
-}
-
-// wksst9120.for: weekly rows "07OCT2026  26.1 5.2  29.0 4.1  30.0 3.3  29.9 1.3",
-// regions Nino1+2, Nino3, Nino3.4, Nino4 (each SST then anomaly). The last row is newest.
-pub fn parseWeekly(raw: &string): string {
-    var last = ""
-    for line in raw.lines() {
-        let f = line.split(" ").filter((w: &string): bool => w.len > 0)
-        if f.len == 9 && f[0].len == 9 {
-            last = Json.obj().str("week", f[0]).float("nino34", num(f[5])).float("nino34Anom", num(f[6])).build()
-        }
-    }
-    return if last.len > 0 { last } else { "null" }
-}
-
-// soi: two blocks of "YEAR  JAN ... DEC" rows (anomaly, then standardized),
-// fixed width: a 4-digit year then twelve 6-char fields, -999.9 for missing.
-// The newest standardized months, oldest first, as [year, month, value].
-pub fn parseSoi(raw: &string, keep: i64): JsonArr {
-    var rows: Vec<string> = []
-    var standardized = false
-    for line in raw.lines() {
-        if line.contains("STANDARDIZED") {
-            standardized = true
-            rows = []
-            continue
-        }
-        if !standardized || line.len < 4 + 6 {
-            continue
-        }
-        let Some(year) = parseFloat(line.slice(0, 4).clone()) else {
-            continue
-        }
-        var m: i64 = 0
-        while m < 12 && 4 + (m + 1) * 6 <= line.len {
-            let v = num(line.slice(4 + m * 6, 4 + (m + 1) * 6))
-            if v > -999.0 {
-                rows.push(Json.arr().int(year as i64).int(m + 1).float(v).build())
-            }
-            m += 1
-        }
-    }
-    var arr = Json.arr()
-    var i = if rows.len > keep { rows.len - keep } else { 0 }
-    while i < rows.len {
-        arr = arr.raw(rows[i])
-        i += 1
-    }
-    return arr
-}
-
-// heat_content_index.txt rows "2026    9     2.23      2.93       3.39": year,
-// month, then 300 m ocean heat anomaly for three equatorial boxes. The middle
-// one (160E-80W) is the one CPC charts.
-pub fn parseHeat(raw: &string, keep: i64): JsonArr {
-    var rows: Vec<string> = []
-    for line in raw.lines() {
-        let f = line.split(" ").filter((w: &string): bool => w.len > 0)
-        if f.len != 5 || parseFloat(f[0].clone()).isNone() {
-            continue
-        }
-        rows.push(Json.arr().int(num(f[0]) as i64).int(num(f[1]) as i64).float(num(f[3])).build())
-    }
-    var arr = Json.arr()
-    var i = if rows.len > keep { rows.len - keep } else { 0 }
-    while i < rows.len {
-        arr = arr.raw(rows[i])
-        i += 1
-    }
-    return arr
-}
-
-// GET /api/enso -> {"discussion":{status,synopsis},"oni":[[season,year,anom]],"weekly":{week,nino34,nino34Anom},
-//                   "soi":[[year,month,value]],"heat":[[year,month,anom]]}
-pub fn ensoHandler(ctx: &mut Context): Response {
-    ctx.setHeader("Cache-Control", "no-store")
-    var o = Json.obj()
-    var any = false
-    if let Some(h) = cachedFetch("ensodisc", "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/ensodisc.shtml", ENSO_FRESH_MS) {
-        o = o.raw("discussion", parseDiscussion(h))
-        any = true
-    }
-    if let Some(t) = cachedFetch("oni", "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt", ENSO_FRESH_MS) {
-        // 30 years: enough to show 1997 and 2015, the two monsters this one is compared to.
-        o = o.arr("oni", parseOni(t, 12 * 30))
-        any = true
-    }
-    if let Some(t) = cachedFetch("weekly", "https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for", ENSO_FRESH_MS) {
-        o = o.raw("weekly", parseWeekly(t))
-        any = true
-    }
-    if let Some(t) = cachedFetch("soi", "https://www.cpc.ncep.noaa.gov/data/indices/soi", ENSO_FRESH_MS) {
-        o = o.arr("soi", parseSoi(t, 24))
-        any = true
-    }
-    if let Some(t) = cachedFetch("heat", "https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/ocean/index/heat_content_index.txt", ENSO_FRESH_MS) {
-        o = o.arr("heat", parseHeat(t, 24))
-        any = true
-    }
-    if !any {
-        ctx.setStatus(502)
-        return ctx.json("{\"error\":\"cpc.ncep.noaa.gov unavailable\"}")
-    }
-    return ctx.json(o.build())
 }
 
 // Natural Earth 50m coastline, one "lat lon" vertex per line, "#" starting
@@ -682,13 +531,12 @@ fn addRoutes(r: &mut Router, pre: string): void {
     r.get(pre + "/og-tsunami.png", ogTsunamiHandler)
     r.get(pre + "/og-quakes.png", ogQuakesHandler)
     r.get(pre + "/api/centers", centersHandler)
-    r.get(pre + "/api/enso", ensoHandler)
     r.get(pre + "/api/coast", coastHandler)
     r.get(pre + "/api/places", placesHandler)
 }
 
 pub fn main(): i32 {
-    var parser = ArgParser.new("tsunami", "tsunami and El Nino status for where you are")
+    var parser = ArgParser.new("tsunami", "tsunami and earthquake status for where you are")
     parser.addI64("port", "p", "port to listen on", 3000)
     parser.addString("contact", "c", "contact string for the upstream User-Agent", "")
     let args = parser.parse()
