@@ -41,7 +41,7 @@
   const quakes = location.hash === "#quakes";
   document.getElementById("title").textContent = quakes ? "Earthquake Check" : "Tsunami Check";
   document.getElementById("line").textContent = quakes
-    ? "How hard did it shake where you are? One tap tells you, in plain words."
+    ? "How hard did it shake where you are?"
     : "Is a tsunami coming? One tap tells you, in plain words.";
   document.getElementById("url").textContent = quakes ? "chadsmith.dev/earthquakes" : "chadsmith.dev/tsunami";
   const art = document.getElementById("art");
