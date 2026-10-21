@@ -131,7 +131,8 @@ function setPlace(p) {
 // The link carries the place (setPlace keeps it in the URL), so whoever opens
 // it lands on the same town's answer. The text is that answer as it reads now.
 function initShare() {
-  $("shareBtn").onclick = async () => {
+  // The share item in the appnav menu calls this.
+  window.appShare = async () => {
     const title = document.title;
     const answer = $("hero").querySelector("h2")?.innerText || "";
     const text = place && !/where are you|checking/i.test(answer) ? `${answer}: ${place.name}` : title;

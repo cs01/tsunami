@@ -24,13 +24,9 @@ a { color: var(--sea); }
 [hidden] { display: none !important; }
 
 header { padding: calc(env(safe-area-inset-top) + 10px) 16px 6px; max-width: 720px; margin: 0 auto; }
-.tabs { display: flex; gap: 6px; background: rgba(255,255,255,.35); border-radius: 999px; padding: 4px; margin-bottom: 10px; }
-.tabs a {
-  flex: 1; text-align: center; text-decoration: none; color: #fff; font-weight: 800; font-size: 20px;
-  padding: 6px 0; border-radius: 999px; text-shadow: 0 1px 3px rgba(0,0,0,.25);
-}
-.tabs .share { flex: 0 0 auto; min-width: 0; height: auto; padding: 6px 16px; font-size: 17px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-.tabs a.on { background: #fff; color: var(--ink); text-shadow: none; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+/* #appnav itself comes from chadsmith.dev/appnav.js; on this sky-blue header the title is white. */
+#appnav { margin-bottom: 10px; }
+#appnav .an-title { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.25); font-size: 22px; }
 #where { display: flex; gap: 8px; }
 .ico { width: 1.05em; height: 1.05em; vertical-align: -0.15em; margin-right: 6px; }
 #searchForm { flex: 1; position: relative; min-width: 0; }

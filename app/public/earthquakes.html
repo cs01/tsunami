@@ -31,11 +31,7 @@
 </head>
 <body>
 <header>
-  <nav class="tabs">
-    <a href="./" class="keep-place">Tsunami</a>
-    <a href="/earthquakes" class="keep-place on">Earthquakes</a>
-    <button id="shareBtn" class="share" aria-label="share"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/></svg>Share</button>
-  </nav>
+  <div id="appnav" data-app="earthquakes" data-title="Earthquake Check" data-keep="tsunami,earthquakes"></div>
   <div id="where">
     <button id="gpsBtn"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Where I am</span></button>
     <form id="searchForm" autocomplete="off">
@@ -95,5 +91,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="common.js"></script>
 <script src="quakes.js"></script>
+<script src="/appnav.js" defer></script>
 </body>
 </html>
