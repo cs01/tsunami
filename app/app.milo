@@ -558,10 +558,12 @@ pub fn main(): i32 {
 
     // Under systemd the listener comes from tsunami.socket (the port flag is then
     // ignored), so a restart queues new connections in the kernel instead of
-    // refusing them. SIGTERM stops accepting and lets requests in flight finish,
-    // up to drainMs, before the process exits.
+    // refusing them. Without socketActivation the server refuses an inherited
+    // socket and exits. SIGTERM stops accepting and lets requests in flight
+    // finish, up to drainMs, before the process exits.
     let opts = ServeOptions {
         drainMs: 10000,
+        socketActivation: true,
     }
     if let Err(msg) = serveRouterWith("127.0.0.1", port, r, opts) {
         Log.str("err", msg).error("serve failed")
