@@ -666,6 +666,27 @@ pub fn healthHandler(ctx: &mut Context): Response {
     return ctx.json(Json.obj().str("status", "ok").str("app", "tsunami").int("cached", cache.len()).int("coastVertices", coastLat.len).build())
 }
 
+// Every route also answers under /tsunami: the earthquakes page is served at
+// /earthquakes with <base href="/tsunami/">, so its assets and API calls carry
+// the prefix. nginx strips it in prod; locally this alias catches them.
+fn addRoutes(r: &mut Router, pre: string): void {
+    r.get(pre + "/", indexHandler)
+    r.get(pre + "/index.html", indexHandler)
+    r.get(pre + "/app.js", scriptHandler)
+    r.get(pre + "/earthquakes", quakesPageHandler)
+    r.get(pre + "/common.js", commonHandler)
+    r.get(pre + "/quakes.js", quakesScriptHandler)
+    r.get(pre + "/style.css", styleHandler)
+    r.get(pre + "/manifest.webmanifest", manifestHandler)
+    r.get(pre + "/icons/icon.svg", iconHandler)
+    r.get(pre + "/og-tsunami.png", ogTsunamiHandler)
+    r.get(pre + "/og-quakes.png", ogQuakesHandler)
+    r.get(pre + "/api/centers", centersHandler)
+    r.get(pre + "/api/enso", ensoHandler)
+    r.get(pre + "/api/coast", coastHandler)
+    r.get(pre + "/api/places", placesHandler)
+}
+
 pub fn main(): i32 {
     var parser = ArgParser.new("tsunami", "tsunami and El Nino status for where you are")
     parser.addI64("port", "p", "port to listen on", 3000)
@@ -683,21 +704,8 @@ pub fn main(): i32 {
     Log.int("port", port as i64).info("tsunami listening")
 
     var r: Router = Router.new()
-    r.get("/", indexHandler)
-    r.get("/index.html", indexHandler)
-    r.get("/app.js", scriptHandler)
-    r.get("/earthquakes", quakesPageHandler)
-    r.get("/common.js", commonHandler)
-    r.get("/quakes.js", quakesScriptHandler)
-    r.get("/style.css", styleHandler)
-    r.get("/manifest.webmanifest", manifestHandler)
-    r.get("/icons/icon.svg", iconHandler)
-    r.get("/og-tsunami.png", ogTsunamiHandler)
-    r.get("/og-quakes.png", ogQuakesHandler)
-    r.get("/api/centers", centersHandler)
-    r.get("/api/enso", ensoHandler)
-    r.get("/api/coast", coastHandler)
-    r.get("/api/places", placesHandler)
+    addRoutes(&mut r, "")
+    addRoutes(&mut r, "/tsunami")
     r.get("/healthz", healthHandler)
 
     if let Err(msg) = serveRouter(port, r) {

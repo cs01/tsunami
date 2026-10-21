@@ -153,6 +153,7 @@ h4 { margin: 16px 0 2px; font-size: 19px; }
 .steps li { padding: 5px 0; font-size: 18px; }
 
 footer { text-align: center; font-size: 13px; color: var(--muted); margin: 18px 0; }
+footer a.home { display: inline-block; margin-bottom: 8px; font-weight: 800; }
 .leaflet-container { font: 600 14px var(--font); }
 
 @media (max-width: 420px) {

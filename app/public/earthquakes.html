@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<base href="/tsunami/">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f8fe0">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,7 +33,7 @@
 <header>
   <nav class="tabs">
     <a href="./" class="keep-place">Tsunami</a>
-    <a href="earthquakes" class="keep-place on">Earthquakes</a>
+    <a href="/earthquakes" class="keep-place on">Earthquakes</a>
     <button id="shareBtn" class="share" aria-label="share">Share</button>
   </nav>
   <div id="where">
@@ -53,8 +54,8 @@
   <div class="legend"><span class="chip green">Safe</span><span class="chip yellow">Pay attention</span><span class="chip orange">Be careful</span><span class="chip red">Danger</span></div>
 
   <section class="card" id="nearCard">
-    <h3>Shakes you'd feel here</h3>
-    <p class="sub">Last 30 days. Each one is colored by how hard it shook <b>where you are</b>, not how big it was. Tap one to see its shaking zones.</p>
+    <h3>Last 30 Days</h3>
+    <p class="sub">Each one is colored by the shaking <b>experienced at your location</b>, not by how big it was. Tap one to see its shaking zones.</p>
     <div id="nearMap" class="map"></div>
     <div id="nearZone" class="zone-cap"></div>
     <div id="near"><div class="skel row"></div><div class="skel row"></div><div class="skel row"></div></div>
@@ -86,6 +87,7 @@
   </section>
 
   <footer>
+    <a class="home" href="https://chadsmith.dev/">Made by Chad Smith. More projects at chadsmith.dev</a><br>
     Data: <a href="https://www.tsunami.gov" target="_blank" rel="noopener">NOAA tsunami.gov</a> ·
     <a href="https://www.weather.gov" target="_blank" rel="noopener">NWS alerts</a> ·
     <a href="https://earthquake.usgs.gov" target="_blank" rel="noopener">USGS</a> ·
