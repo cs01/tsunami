@@ -11,10 +11,16 @@ let ground = null; // {elev, coastKm, level}
 
 // NWS issues tsunami alerts per US coastal zone, so a point query is exact.
 // Outside the US it has no zones and errors, which just means "no NWS answer".
+// NWS sends tests and exercises through the same feed ("TEST Tsunami Warning",
+// status Test, severity Extreme): one turned this page red for the Bay Area on
+// 2026-10-21. Only status Actual may move the answer. The query asks for that and
+// the filter re-checks it, since a test that slipped through means a false evacuation.
+const isActual = (a) => a.status === "Actual";
+
 async function nwsAlerts(p) {
   try {
-    const j = await getJson(`https://api.weather.gov/alerts/active?point=${p.lat.toFixed(4)},${p.lon.toFixed(4)}`);
-    return (j.features || []).map((f) => f.properties).filter((a) => /tsunami/i.test(a.event || ""));
+    const j = await getJson(`https://api.weather.gov/alerts/active?status=actual&point=${p.lat.toFixed(4)},${p.lon.toFixed(4)}`);
+    return (j.features || []).map((f) => f.properties).filter((a) => isActual(a) && /tsunami/i.test(a.event || ""));
   } catch {
     return null;
   }
@@ -203,8 +209,8 @@ async function zoneShape(url) {
 
 async function loadTsuZones() {
   try {
-    const j = await getJson("https://api.weather.gov/alerts/active?event=Tsunami%20Warning,Tsunami%20Advisory,Tsunami%20Watch");
-    tsuAlerts = await Promise.all(j.features.map(async (f) => {
+    const j = await getJson("https://api.weather.gov/alerts/active?status=actual&event=Tsunami%20Warning,Tsunami%20Advisory,Tsunami%20Watch");
+    tsuAlerts = await Promise.all(j.features.filter((f) => isActual(f.properties)).map(async (f) => {
       const a = f.properties;
       const geom = f.geometry ? [f.geometry] : (await Promise.all((a.affectedZones || []).slice(0, 60).map(zoneShape))).filter(Boolean);
       return { level: alertLevel(a.event), event: a.event, area: a.areaDesc || "", geom };
