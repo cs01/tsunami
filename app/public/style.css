@@ -13,6 +13,12 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 html { overflow-y: scroll; } /* a scrollbar appearing mid-load shifts everything sideways */
+/* Android colors the PWA nav bar from the root background-color; the body gradient is an image, so without this it falls back to white. */
+html { background-color: #5cc0ff; }
+/* Edge-to-edge Chrome draws the page under the nav bar, where the gradient is near-white: paint that strip sky blue too. */
+@media (display-mode: standalone) {
+  body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: env(safe-area-inset-bottom); background: #5cc0ff; z-index: 1000; }
+}
 body {
   min-height: 100vh;
   background: linear-gradient(#5cc0ff, #a9dcff 40%, #d8f0ff);
