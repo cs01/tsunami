@@ -6,7 +6,7 @@
 // geocoding) the page fetches itself. The page is compiled
 // in with embedFile.
 from "std/http" import {
-    Context, Response, Router, serveRouter
+    Context, Response, Router, ServeOptions, serveRouterWith
 }
 from "std/argparse" import {
     ArgParser
@@ -556,7 +556,14 @@ pub fn main(): i32 {
     addRoutes(&mut r, "/tsunami")
     r.get("/healthz", healthHandler)
 
-    if let Err(msg) = serveRouter(port, r) {
+    // Under systemd the listener comes from tsunami.socket (the port flag is then
+    // ignored), so a restart queues new connections in the kernel instead of
+    // refusing them. SIGTERM stops accepting and lets requests in flight finish,
+    // up to drainMs, before the process exits.
+    let opts = ServeOptions {
+        drainMs: 10000,
+    }
+    if let Err(msg) = serveRouterWith("127.0.0.1", port, r, opts) {
         Log.str("err", msg).error("serve failed")
         return 1
     }
